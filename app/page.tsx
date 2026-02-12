@@ -25,15 +25,15 @@ type ItItem = {
   notas: string;
 };
 
-function getBaseUrl() {
-  const h = headers();
-  const host = h.get("host");
+async function getBaseUrl() {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
   const proto = process.env.VERCEL ? "https" : "http";
   return `${proto}://${host}`;
 }
 
 async function getJSON<T>(path: string): Promise<T> {
-  const base = getBaseUrl();
+  const base = await getBaseUrl();
   const res = await fetch(`${base}${path}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`Error en ${path}`);
   return res.json();
@@ -87,7 +87,6 @@ const card: React.CSSProperties = {
 const subtle: React.CSSProperties = { color: "#6b7280" };
 
 export default async function Home() {
-  // No “romper” nunca: si falla, arrays vacíos
   const spotsRes = await getJSON<{ items: Spot[] }>("/api/spots").catch(() => ({ items: [] as Spot[] }));
   const itinRes = await getJSON<{ items: ItItem[] }>("/api/itinerary").catch(() => ({ items: [] as ItItem[] }));
 
@@ -106,7 +105,6 @@ export default async function Home() {
       }}
     >
       <div style={{ maxWidth: 1140, margin: "0 auto", padding: "28px 18px 40px" }}>
-        {/* Header */}
         <header style={{ marginBottom: 18 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
             <h1 style={{ fontSize: 36, margin: 0, letterSpacing: -0.5 }}>Los Lozano en Madrid 🇪🇸</h1>
@@ -117,19 +115,11 @@ export default async function Home() {
           </p>
         </header>
 
-        {/* Estado */}
         {(spots.length === 0 || itinerary.length === 0) && (
-          <div
-            style={{
-              ...card,
-              background: "#fffbeb",
-              borderColor: "#fcd34d",
-              marginBottom: 14,
-            }}
-          >
+          <div style={{ ...card, background: "#fffbeb", borderColor: "#fcd34d", marginBottom: 14 }}>
             <b>Ojo:</b>{" "}
             {spots.length === 0 && itinerary.length === 0
-              ? "No pude cargar Spots ni Itinerario desde la página (pero tus /api sí funcionan). Con este ajuste normalmente se corrige al redeploy."
+              ? "No pude cargar Spots ni Itinerario desde la página. Si tus /api sí funcionan, esto ya debería resolverse con este build."
               : spots.length === 0
               ? "No pude cargar Spots."
               : "No pude cargar Itinerario."}
@@ -139,9 +129,7 @@ export default async function Home() {
           </div>
         )}
 
-        {/* Layout */}
         <div style={{ display: "grid", gap: 16, gridTemplateColumns: "1.2fr 0.8fr" }}>
-          {/* Itinerario */}
           <section style={card}>
             <h2 style={{ margin: 0, fontSize: 18 }}>📅 Itinerario</h2>
             <p style={{ marginTop: 6, ...subtle, fontSize: 13 }}>
@@ -173,9 +161,7 @@ export default async function Home() {
                             }}
                           >
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-                              <div style={{ fontWeight: 800 }}>
-                                {it.hora ? `⏰ ${it.hora}` : "⏰ (hora por definir)"}
-                              </div>
+                              <div style={{ fontWeight: 800 }}>{it.hora ? `⏰ ${it.hora}` : "⏰ (hora por definir)"}</div>
                               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                                 {it.grupo && <Tag>👨‍👩‍👧‍👦 {it.grupo}</Tag>}
                                 {it.plan && <Tag>🗓️ {it.plan}</Tag>}
@@ -206,7 +192,6 @@ export default async function Home() {
                               )}
                             </div>
 
-                            {/* Historia del lugar (si hay uno solo relacionado) */}
                             {lugares.length === 1 && lugares[0].historia ? (
                               <div style={{ marginTop: 8, fontSize: 13, ...subtle }}>
                                 <b>Historia:</b> {lugares[0].historia}
@@ -228,11 +213,10 @@ export default async function Home() {
             )}
           </section>
 
-          {/* Spots */}
           <section style={card}>
             <h2 style={{ margin: 0, fontSize: 18 }}>📍 Lugares y restaurantes</h2>
             <p style={{ marginTop: 6, ...subtle, fontSize: 13 }}>
-              Aquí vive lo “bonito”: historia, para abuela, niños, caminar, mapa.
+              Historia, si es apto para abuela/niños, caminata y mapa.
             </p>
 
             {spots.length === 0 ? (
@@ -282,9 +266,7 @@ export default async function Home() {
           </section>
         </div>
 
-        <footer style={{ marginTop: 18, ...subtle, fontSize: 12 }}>
-          Tip: editen en Notion y recarguen esta página 🙂
-        </footer>
+        <footer style={{ marginTop: 18, ...subtle, fontSize: 12 }}>Tip: editen en Notion y recarguen esta página 🙂</footer>
       </div>
     </main>
   );
